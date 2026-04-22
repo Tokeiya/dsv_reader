@@ -25,10 +25,19 @@ impl Datum {
 }
 
 #[cfg(test)]
+pub mod test_util {
+	use super::*;
+
+	impl Datum {
+		pub fn assert(&self, expected: &str) {
+			assert_eq!(self.source(), expected);
+		}
+	}
+}
+
+#[cfg(test)]
 mod test {
 	use super::*;
-	use mockall::{mock, predicate::*};
-	use std::num::ParseIntError;
 
 	struct Mock;
 
