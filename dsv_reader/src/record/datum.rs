@@ -1,5 +1,3 @@
-use crate::record::converter::Converter;
-
 pub struct Datum(String);
 
 impl From<&str> for Datum {
@@ -16,14 +14,6 @@ impl From<String> for Datum {
 
 impl Datum {
 	pub fn source(&self) -> &str {
-		todo!()
-	}
-	
-	pub fn convert<C: Converter>(&self, converter: &mut C) -> Result<C::T, C::E> {
-		todo!()
-	}
-	
-	pub fn convert_optional<C: Converter>(&self, converter: &mut C) -> Option<Result<C::T, C::E>> {
 		todo!()
 	}
 }
