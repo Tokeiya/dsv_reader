@@ -1,4 +1,4 @@
-use super::convert::converter::Converter;
+use std::str::FromStr;
 
 pub struct Datum(String);
 
@@ -19,28 +19,18 @@ impl Datum {
 		&self.0
 	}
 
-	pub fn convert<C: Converter>(&self) -> Result<C::T, C::E> {
-		C::convert(&self.0)
+	pub fn convert<C: FromStr>(&self) -> Result<C, C::Err> {
+		C::from_str(&self.0)
 	}
 }
 
 #[cfg(test)]
 mod test {
 	use super::*;
-	use crate::record::convert::converter::Converter;
 	use mockall::{mock, predicate::*};
 	use std::num::ParseIntError;
 
 	struct Mock;
-
-	impl Converter for Mock {
-		type T = i32;
-		type E = ParseIntError;
-
-		fn convert(value: &str) -> Result<Self::T, Self::E> {
-			value.parse::<i32>()
-		}
-	}
 
 	#[test]
 	fn from_str() {
@@ -57,10 +47,10 @@ mod test {
 	#[test]
 	fn convert() {
 		let fixture = Datum::from("123");
-		assert_eq!(fixture.convert::<Mock>().unwrap(), 123);
+		assert_eq!(fixture.convert::<i32>().unwrap(), 123);
 
 		let fixture = Datum::from("456.00");
-		assert!(fixture.convert::<Mock>().is_err());
+		assert!(fixture.convert::<i32>().is_err());
 	}
 
 	#[test]
