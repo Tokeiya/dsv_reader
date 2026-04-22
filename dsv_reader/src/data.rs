@@ -1,4 +1,4 @@
-use crate::record::datum::Datum;
+use crate::datum::Datum;
 
 pub struct Data(Vec<Datum>);
 
