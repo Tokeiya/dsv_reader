@@ -1,5 +1,6 @@
 pub trait Buffer {
-	fn read(&mut self) -> u8;
-	fn peek(&self) -> u8;
-	fn look_ahead_1(&self) -> u8;
+	type Error: std::fmt::Debug;
+	fn read(&mut self) -> Result<Option<u8>, Self::Error>;
+	fn peek(&self) -> Result<Option<u8>, Self::Error>;
+	fn look_ahead_1(&self) -> Result<Option<u8>, Self::Error>;
 }
