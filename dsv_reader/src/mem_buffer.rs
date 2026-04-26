@@ -48,34 +48,16 @@ impl<R: std::io::Read> Buffer for MemBuffer<R> {
 	type Error = std::io::Error;
 	
 	fn read(&mut self) -> Result<Option<u8>, Self::Error> {
-		if let None = self.length {
-			self.load()?;
-		}
+		let ret = self.peek()?;
 		
-		let len = match self.length {
-			None => unreachable!(),
-			Some(l) => l
-		};
-		
-		if len == 0 {
-			return Ok(None);
-		}
-		
-		if self.index == len {
-			self.load()?;
-		}
-		
-		if self.length == Some(0) {
-			Ok(None)
-		} else {
-			let value = self.storage[self.index];
+		if ret.is_some() {
 			self.index += 1;
-			Ok(Some(value))
 		}
+		Ok(ret)
 	}
 	
 	fn peek(&mut self) -> Result<Option<u8>, Self::Error> {
-		if self.length == None {
+		if self.length.is_none() {
 			self.load()?;
 		}
 		
@@ -87,6 +69,7 @@ impl<R: std::io::Read> Buffer for MemBuffer<R> {
 		if len == 0 {
 			return Ok(None);
 		}
+		
 		if len == self.index {
 			self.load()?;
 		}
