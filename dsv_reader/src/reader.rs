@@ -1,10 +1,21 @@
-use super::buffer::Buffer;
-use std::error::Error;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ReaderError<E: std::error::Error> {
+	#[error("Unexpected EOF")]
+	UnexpectedEOF,
+	#[error("Unexpected quote")]
+	UnexpectedQuote,
+	#[error("Unexpected delimiter")]
+	UnexpectedDelimiter,
+	#[error("{0}")]
+	BufferError(#[from] E),
+}
 
 pub trait Reader {
-	type E: Error;
+	type E: std::error::Error;
 	fn read(&mut self) -> Result<Option<(String, bool)>, Self::E>;
-	fn read_line(&mut self, buffer: &mut Vec<String>) -> Result<(), Self::E> {
+	fn read_line(&mut self, buffer: &mut Vec<String>) -> Result<(), ReaderError<Self::E>> {
 		loop {
 			match self.read()? {
 				None => {}
