@@ -27,7 +27,22 @@ impl<R: Read> TsvReader<MemBuffer<R>> {
 	}
 	
 	fn consume_new_line(&mut self) -> Result<(), std::io::Error> {
-		todo!()
+		match self.buffer.peek()?.unwrap() {
+			CR => {
+				_ = self.buffer.read()?;
+				if matches!(self.buffer.peek()?, Some(c) if c == LF) {
+					_ = self.buffer.read()?;
+					Ok(())
+				} else {
+					Ok(())
+				}
+			}
+			LF => {
+				_ = self.buffer.read()?;
+				Ok(())
+			}
+			_ => unreachable!()
+		}
 	}
 }
 
@@ -60,5 +75,38 @@ impl<R: Read> Reader for TsvReader<MemBuffer<R>> {
 				self.read_unquoted()
 			}
 		}
+	}
+}
+
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	use std::io::Cursor;
+	#[test]
+	fn consume_new_line_cr_lf() {
+		let cursor = Cursor::new("\r\n".to_string());
+		let mut fixture = TsvReader { buffer: MemBuffer::new(cursor) };
+		
+		_ = fixture.consume_new_line().unwrap();
+		assert_eq!(fixture.buffer.peek().unwrap(), None);
+	}
+	
+	#[test]
+	fn consume_new_line_cr() {
+		let cursor = Cursor::new("\r".to_string());
+		let mut fixture = TsvReader { buffer: MemBuffer::new(cursor) };
+		
+		_ = fixture.consume_new_line().unwrap();
+		assert_eq!(fixture.buffer.peek().unwrap(), None);
+	}
+	
+	#[test]
+	fn consume_new_line_lf() {
+		let cursor = Cursor::new("\n".to_string());
+		let mut fixture = TsvReader { buffer: MemBuffer::new(cursor) };
+		
+		_ = fixture.consume_new_line().unwrap();
+		assert_eq!(fixture.buffer.peek().unwrap(), None);
 	}
 }
