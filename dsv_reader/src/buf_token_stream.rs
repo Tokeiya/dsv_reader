@@ -1,6 +1,6 @@
 use crate::token::Token;
 use crate::token_stream::TokenStream;
-use std::io::{BufRead, Error as IoError, Result as IoResult};
+use std::io::{BufRead, Read, Result as IoResult};
 
 const LENGTH: usize = 8_192;
 const CR: u8 = b'\r';
@@ -12,41 +12,41 @@ pub struct BufStream<R, const D: u8> {
 	buffer: [u8; LENGTH],
 	len: usize,
 	index: usize,
-	current: Token,
-	next: Token,
+	current: IoResult<Token>,
+	next: IoResult<Token>,
 }
 
-impl<R: BufRead, const D: u8> BufStream<R, D> {
+impl<R: Read, const D: u8> BufStream<R, D> {
 	pub fn try_new(read: R) -> IoResult<Self> {
 		let mut ret = Self {
 			read,
 			buffer: [0; LENGTH],
 			len: 0,
 			index: 0,
-			current: Token::EOF,
-			next: Token::EOF,
+			current: Ok(Token::EOF),
+			next: Ok(Token::EOF),
 		};
-
+		
 		ret.initial_process()?;
 		Ok(ret)
 	}
-
+	
 	fn initial_process(&mut self) -> IoResult<()> {
 		debug_assert!(
-			self.current == Token::EOF
-				&& self.next == Token::EOF
+			matches!(&self.current, Ok(t) if t==&Token::EOF)
+				&& matches!(&self.next,Ok(t) if t==&Token::EOF)
 				&& self.buffer.iter().all(|&x| x == 0),
 			"Once Initialized"
 		);
-
+		
 		self.len = self.read.read(&mut self.buffer)?;
-
-		self.current = self.read_token()?;
-		self.next = self.read_token()?;
-
+		
+		self.current = self.read_token();
+		self.next = self.read_token();
+		
 		Ok(())
 	}
-
+	
 	fn fill_buffer(&mut self) -> IoResult<()> {
 		debug_assert_ne!(self.len, 0);
 		debug_assert_eq!(self.index, self.len);
@@ -54,10 +54,10 @@ impl<R: BufRead, const D: u8> BufStream<R, D> {
 		self.index = 0;
 		Ok(())
 	}
-
+	
 	fn move_index(&mut self) -> IoResult<()> {
 		debug_assert_ne!(self.len, 0);
-
+		
 		self.index += 1;
 		if self.index >= self.len {
 			self.fill_buffer()
@@ -65,7 +65,7 @@ impl<R: BufRead, const D: u8> BufStream<R, D> {
 			Ok(())
 		}
 	}
-
+	
 	fn peek_buffer(&mut self) -> Option<u8> {
 		if self.len == 0 {
 			None
@@ -73,12 +73,12 @@ impl<R: BufRead, const D: u8> BufStream<R, D> {
 			Some(self.buffer[self.index])
 		}
 	}
-
+	
 	fn cr_process(&mut self) -> IoResult<Token> {
 		self.move_index()?;
-
+		
 		let pivot = self.peek_buffer();
-
+		
 		if matches!(pivot,Some(c) if c==LF) {
 			self.move_index()?;
 			Ok(Token::CRLF)
@@ -86,10 +86,10 @@ impl<R: BufRead, const D: u8> BufStream<R, D> {
 			Ok(Token::CR)
 		}
 	}
-
+	
 	fn quote_process(&mut self) -> IoResult<Token> {
 		self.move_index()?;
-
+		
 		if matches!(self.peek_buffer(),Some(c) if c==QUOTE) {
 			self.move_index()?;
 			Ok(Token::EscapedQuoted)
@@ -97,10 +97,10 @@ impl<R: BufRead, const D: u8> BufStream<R, D> {
 			Ok(Token::Quoted)
 		}
 	}
-
+	
 	fn other_process(&mut self) -> IoResult<Token> {
 		let mut vec = Vec::new();
-
+		
 		while let Some(c) = self.peek_buffer() {
 			if c == QUOTE || c == LF || c == CR || c == D {
 				break;
@@ -109,20 +109,19 @@ impl<R: BufRead, const D: u8> BufStream<R, D> {
 				self.move_index()?;
 			}
 		}
-
+		
 		Ok(Token::Value(vec))
 	}
-
+	
 	fn read_token(&mut self) -> IoResult<Token> {
 		let cursor = self.peek_buffer();
-
+		
 		if cursor.is_none() {
 			return Ok(Token::EOF);
 		};
-
-		let cursor = cursor.unwrap();
-
-		match cursor {
+		
+		
+		match cursor.unwrap() {
 			CR => self.cr_process(),
 			LF => {
 				self.move_index()?;
@@ -143,12 +142,12 @@ impl<R: BufRead, const D: u8> TokenStream for BufStream<R, D> {
 	fn next_token(&mut self) -> Result<Token, Self::Error> {
 		todo!()
 	}
-
-	fn peek_token(&mut self) -> Result<&Token, Self::Error> {
+	
+	fn peek_token(&mut self) -> Result<Token, Self::Error> {
 		todo!()
 	}
-
-	fn ahead_token(&mut self) -> Result<&Token, Self::Error> {
+	
+	fn ahead_token(&mut self) -> Result<Token, Self::Error> {
 		todo!()
 	}
 }
@@ -156,4 +155,39 @@ impl<R: BufRead, const D: u8> TokenStream for BufStream<R, D> {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use mockall::mock;
+	use std::io::Cursor;
+	use std::io::{Error as IoError, ErrorKind, Result as IoResult};
+	mock! {
+		Read{}
+		
+		impl std::io::Read for Read {
+			fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> ;
+		}
+	}
+	
+	#[test]
+	fn try_new_error() {
+		let mut mock = MockRead::new();
+		mock.expect_read().times(1).returning(|_| IoResult::Err(IoError::new(ErrorKind::Other, "test")));
+		
+		let fixture = BufStream::<_, 4>::try_new(mock);
+		
+		match fixture {
+			Ok(_) => unreachable!(),
+			Err(e) => {
+				assert_eq!(e.kind(), ErrorKind::Other);
+				assert_eq!(e.to_string(), "test");
+			}
+		}
+	}
+	#[test]
+	fn try_new() {
+		let cursor = Cursor::new("hello\tworld".to_string());
+		let mut fixture = BufStream::<_, 4>::try_new(cursor).unwrap();
+		
+		_ = fixture.peek_buffer().unwrap();
+		
+		todo!()
+	}
 }
