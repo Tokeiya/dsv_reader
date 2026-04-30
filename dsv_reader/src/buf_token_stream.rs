@@ -6,7 +6,6 @@ const LENGTH: usize = 8_192;
 const CR: u8 = b'\r';
 const LF: u8 = b'\n';
 const QUOTE: u8 = b'"';
-
 pub struct BufStream<R, const D: u8> {
 	read: R,
 	buffer: [u8; LENGTH],
@@ -171,7 +170,7 @@ mod tests {
 		let mut mock = MockRead::new();
 		mock.expect_read().times(1).returning(|_| IoResult::Err(IoError::new(ErrorKind::Other, "test")));
 		
-		let fixture = BufStream::<_, 4>::try_new(mock);
+		let fixture = BufStream::<_, b'\t'>::try_new(mock);
 		
 		match fixture {
 			Ok(_) => unreachable!(),
@@ -184,10 +183,13 @@ mod tests {
 	#[test]
 	fn try_new() {
 		let cursor = Cursor::new("hello\tworld".to_string());
-		let mut fixture = BufStream::<_, 4>::try_new(cursor).unwrap();
+		let fixture = BufStream::<_, b'\t'>::try_new(cursor).unwrap();
 		
-		_ = fixture.peek_buffer().unwrap();
+		assert!(matches!(fixture.current,Ok(Token::Value(vec)) if vec==b"hello"));
+		assert!(matches!(fixture.next,Ok(Token::Delimiter(t)) if t==b'\t'));
 		
-		todo!()
+		assert_eq!(fixture.len, 11);
+		assert_eq!(fixture.index, 6);
+		assert_eq!(&fixture.buffer[..11], b"hello\tworld");
 	}
 }
