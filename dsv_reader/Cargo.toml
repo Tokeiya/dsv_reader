@@ -5,6 +5,9 @@ edition = "2024"
 
 [dev-dependencies]
 mockall = "*"
+rand = "*"
+rand_core = "*"
+
 
 [dependencies]
 thiserror = "*"

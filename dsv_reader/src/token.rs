@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
 	Delimiter(u8),
 	Quoted,
@@ -9,5 +9,3 @@ pub enum Token {
 	Value(Vec<u8>),
 	EOF,
 }
-
-
