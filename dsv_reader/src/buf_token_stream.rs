@@ -160,12 +160,10 @@ mod tests {
 	use super::*;
 	use mockall::mock;
 	use rand::prelude::{IndexedRandom, SliceRandom};
-	use rand::{Rng, RngExt};
+	use rand::RngExt;
 	use std::io::Cursor;
 	use std::io::{Error as IoError, ErrorKind, Result as IoResult};
-	use std::sync::LazyLock;
 	
-	const SPACE: u8 = b' ';
 	
 	mock! {
 		Read{}
@@ -175,7 +173,6 @@ mod tests {
 		}
 	}
 	
-	const WORDS: LazyLock<[u8; 95]> = LazyLock::new(|| std::array::from_fn(|i| (i + 0x20) as u8));
 	
 	
 	#[test]
@@ -282,7 +279,7 @@ mod tests {
 		exp.insert(500, b'\r');
 		exp.insert(501, b'\n');
 		
-		let mut str = String::from_utf8(exp).unwrap();
+		let str = String::from_utf8(exp).unwrap();
 		
 		assert(&str);
 	}
