@@ -1,4 +1,5 @@
 use super::token_stream::TokenStream;
+use std::string::FromUtf8Error;
 use thiserror::Error as ThisError;
 
 
@@ -13,6 +14,8 @@ pub enum Error<E: std::error::Error> {
 		source: E,
 		remaining: Vec<u8>,
 	},
+	#[error(transparent)]
+	FromUtf8Error(#[from]FromUtf8Error),
 }
 
 pub trait DsvRead<R: TokenStream, const D: u8> {

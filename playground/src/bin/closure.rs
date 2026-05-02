@@ -24,6 +24,8 @@ impl<T: MyFn> MyFnMut for T {
 }
 
 
-fn main() {}
+fn main() {
+	let s = String::from_utf8(Vec::new());
+}
 
 
