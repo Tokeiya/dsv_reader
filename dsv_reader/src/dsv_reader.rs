@@ -10,35 +10,39 @@ impl<R: TokenStream, const D: u8> DsvReader<R, D> {
 		Self { token_stream }
 	}
 	
-	fn read(&mut self, buff: &Vec<u8>) -> Result<Token, Error<R::Error>> {
+	fn read(&mut self, buff: Option<&Vec<u8>>) -> Result<Token, Error<R::Error>> {
 		self.token_stream.advance_token()
-			.map_err(|err| Error::TokenStreamError { source: err, remaining: buff.clone() })
+			.map_err(|err| Error::TokenStreamError { source: err, remaining: if let Some(b) = buff { b.clone() } else { Vec::new() } })
 	}
 	
-	fn peek(&mut self, buff: &Vec<u8>) -> Result<&Token, Error<R::Error>> {
-		match self.read(&buff) {
-			Ok(_) => { unreachable!() }
-			Err(err) => {
-				Err(err)
-			}
+	fn peek(&mut self, buff: Option<&Vec<u8>>) -> Result<&Token, Error<R::Error>> {
+		if self.token_stream.current_token().is_err() {
+			Err(self.read(buff).unwrap_err())
+		} else {
+			Ok(self.token_stream.current_token().unwrap())
 		}
+	}
+	
+	fn read_normal(&mut self) -> Result<Option<(String, bool)>, Error<R::Error>> {
+		todo!()
+	}
+	
+	fn read_quoted(&mut self) -> Result<Option<(String, bool)>, Error<R::Error>> {
+		todo!()
 	}
 }
 
 
 impl<R: TokenStream, const D: u8> DsvRead<R, D> for DsvReader<R, D> {
 	fn read(&mut self) -> Result<Option<(String, bool)>, Error<R::Error>> {
-		let mut is_quoted = false;
-		let mut buff = Vec::<u8>::new();
-		
-		let piv = self.read(&mut buff)?;
+		let piv = self.read(None)?;
 		
 		match piv {
 			Token::Delimiter(d) => {
 				return Ok(Some(("".to_string(), false)));
 			}
 			Token::Quoted => {
-				is_quoted = true;
+				todo!()
 			}
 			Token::CR => {
 				return Ok(Some(("".to_string(), true)));
@@ -49,7 +53,9 @@ impl<R: TokenStream, const D: u8> DsvRead<R, D> for DsvReader<R, D> {
 			Token::CRLF => {
 				return Ok(Some(("".to_string(), true)));
 			}
-			Token::Value(v) => {}
+			Token::Value(v) => {
+				todo!()
+			}
 			Token::EOF => {
 				return Ok(None)
 			}
