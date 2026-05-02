@@ -69,7 +69,15 @@ impl<R: TokenStream, const D: u8> DsvReader<R, D> {
 					return Err(Error::UnexpectedDelimiter)
 				}
 				Token::Quoted => {
-					todo!()
+					match self.peek(Some(&buff))? {
+						Token::Delimiter(_) => todo!(),
+						Token::Quoted => buff.push(b'"'),
+						Token::CR => todo!(),
+						Token::LF => todo!(),
+						Token::CRLF => todo!(),
+						Token::Value(_) => return Err(Error::UnexpectedQuote),
+						Token::EOF => todo!()
+					}
 				}
 				Token::CR => buff.push(b'\r'),
 				Token::LF => buff.push(b'\n'),
