@@ -18,9 +18,11 @@ pub enum Error<E: std::error::Error> {
 	UnexpectedNewLine,
 }
 
+pub type Result<T, E> = std::result::Result<T, Error<E>>;
+
 pub trait DsvRead<R: TokenStream> {
-	fn read(&mut self) -> Result<Option<(String, bool)>, Error<R::Error>>;
-	fn fill(&mut self, buffer: &mut Vec<String>) -> Result<Option<usize>, Error<R::Error>> {
+	fn read(&mut self) -> Result<Option<(String, bool)>, R::Error>;
+	fn fill(&mut self, buffer: &mut Vec<String>) -> Result<Option<usize>, R::Error> {
 		let mut cnt = 0;
 
 		loop {
