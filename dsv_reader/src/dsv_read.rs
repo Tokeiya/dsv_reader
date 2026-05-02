@@ -2,7 +2,7 @@ use super::token_stream::TokenStream;
 use std::string::FromUtf8Error;
 use thiserror::Error as ThisError;
 
-#[derive(ThisError)]
+#[derive(ThisError, Debug)]
 pub enum Error<E: std::error::Error> {
 	#[error("Unexpected end of file")]
 	UnexpectedQuote,
@@ -18,7 +18,7 @@ pub enum Error<E: std::error::Error> {
 	UnexpectedNewLine,
 }
 
-pub trait DsvRead<R: TokenStream, const D: u8> {
+pub trait DsvRead<R: TokenStream> {
 	fn read(&mut self) -> Result<Option<(String, bool)>, Error<R::Error>>;
 	fn fill(&mut self, buffer: &mut Vec<String>) -> Result<Option<usize>, Error<R::Error>> {
 		let mut cnt = 0;
