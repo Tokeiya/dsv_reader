@@ -28,9 +28,7 @@ impl<R: TokenStream, const D: u8> DsvReader<R, D> {
 		let is_eol;
 		
 		loop {
-			let pivot = self.read(Some(&mut buff))?;
-			
-			match pivot {
+			match self.read(Some(&mut buff))? {
 				Token::Delimiter(_) => {
 					is_eol = false;
 					break;
@@ -62,6 +60,25 @@ impl<R: TokenStream, const D: u8> DsvReader<R, D> {
 	}
 	
 	fn read_quoted(&mut self) -> Result<Option<(String, bool)>, Error<R::Error>> {
+		let mut buff = Vec::new();
+		let is_eol: bool;
+		
+		loop {
+			match self.read(Some(&buff))? {
+				Token::Delimiter(_) => {
+					return Err(Error::UnexpectedDelimiter)
+				}
+				Token::Quoted => {
+					todo!()
+				}
+				Token::CR => buff.push(b'\r'),
+				Token::LF => buff.push(b'\n'),
+				Token::CRLF => buff.extend_from_slice(b"\r\n"),
+				Token::Value(vec) => buff.extend_from_slice(vec.as_slice()),
+				Token::EOF => return Err(Error::UnexpectedEOF)
+			}
+		}
+		
 		todo!()
 	}
 }

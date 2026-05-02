@@ -9,6 +9,8 @@ pub enum Error<E: std::error::Error> {
 	UnexpectedQuote,
 	#[error("Unexpected end of file")]
 	UnexpectedEOF,
+	#[error("Unexpected delimiter")]
+	UnexpectedDelimiter,
 	#[error("Token stream error: {source}")]
 	TokenStreamError {
 		source: E,
@@ -16,6 +18,7 @@ pub enum Error<E: std::error::Error> {
 	},
 	#[error(transparent)]
 	FromUtf8Error(#[from]FromUtf8Error),
+	
 }
 
 pub trait DsvRead<R: TokenStream, const D: u8> {
