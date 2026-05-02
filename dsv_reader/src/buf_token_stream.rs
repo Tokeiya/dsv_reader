@@ -86,17 +86,6 @@ impl<R: Read, const D: u8> BufStream<R, D> {
 		}
 	}
 	
-	fn quote_process(&mut self) -> IoResult<Token> {
-		self.move_index()?;
-		
-		if matches!(self.peek_buffer(),Some(c) if c==QUOTE) {
-			self.move_index()?;
-			Ok(Token::EscapedQuoted)
-		} else {
-			Ok(Token::Quoted)
-		}
-	}
-	
 	fn other_process(&mut self) -> IoResult<Token> {
 		let mut vec = Vec::new();
 		
@@ -125,7 +114,10 @@ impl<R: Read, const D: u8> BufStream<R, D> {
 				self.move_index()?;
 				Ok(Token::LF)
 			}
-			QUOTE => self.quote_process(),
+			QUOTE => {
+				self.move_index()?;
+				Ok(Token::Quoted)
+			}
 			x if x == D => {
 				self.move_index()?;
 				Ok(Token::Delimiter(D))
@@ -224,7 +216,6 @@ mod tests {
 			match &advance {
 				Token::Delimiter(d) => accum.push(*d),
 				Token::Quoted => accum.push(QUOTE),
-				Token::EscapedQuoted => accum.extend_from_slice(b"\"\""),
 				Token::CR => accum.push(CR),
 				Token::LF => accum.push(LF),
 				Token::CRLF => accum.extend_from_slice(b"\r\n"),
