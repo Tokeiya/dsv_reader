@@ -8,10 +8,10 @@ pub enum Error<E: std::error::Error> {
 	UnexpectedQuote,
 	#[error("Unexpected end of file")]
 	UnexpectedEOF,
-	#[error("Token stream error: {error}")]
+	#[error("Token stream error: {source}")]
 	TokenStreamError {
-		error: E,
-		remaining: String,
+		source: E,
+		remaining: Vec<u8>,
 	},
 }
 
