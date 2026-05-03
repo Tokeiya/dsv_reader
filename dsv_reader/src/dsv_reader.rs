@@ -9,7 +9,7 @@ impl<R: TokenStream> DsvReader<R> {
 	pub fn new(token_stream: R) -> Self {
 		Self { token_stream }
 	}
-
+	
 	fn read_token(&mut self, buff: Option<&Vec<u8>>) -> Result<Token, Error<R::Error>> {
 		self.token_stream
 			.advance_token()
@@ -22,7 +22,7 @@ impl<R: TokenStream> DsvReader<R> {
 				},
 			})
 	}
-
+	
 	fn peek_token(&mut self, buff: Option<&Vec<u8>>) -> Result<&Token, Error<R::Error>> {
 		if self.token_stream.current_token().is_err() {
 			Err(self.read_token(buff).unwrap_err())
@@ -30,13 +30,13 @@ impl<R: TokenStream> DsvReader<R> {
 			Ok(self.token_stream.current_token().unwrap())
 		}
 	}
-
+	
 	fn read_normal(
 		&mut self,
 		mut buff: Vec<u8>,
 	) -> Result<Option<(String, bool)>, Error<R::Error>> {
 		let is_eol;
-
+		
 		loop {
 			match self.read_token(Some(&buff))? {
 				Token::Delimiter(_) => {
@@ -63,11 +63,11 @@ impl<R: TokenStream> DsvReader<R> {
 				}
 			}
 		}
-
+		
 		let str = String::from_utf8(buff).map_err(Error::FromUtf8Error)?;
 		Ok(Some((str, is_eol)))
 	}
-
+	
 	fn read_quoted(&mut self) -> Result<Option<(String, bool)>, Error<R::Error>> {
 		let mut buff = Vec::new();
 		loop {
@@ -121,7 +121,7 @@ impl<R: TokenStream> DsvReader<R> {
 impl<R: TokenStream> DsvRead<R> for DsvReader<R> {
 	fn read(&mut self) -> Result<Option<(String, bool)>, Error<R::Error>> {
 		let piv = self.read_token(None)?;
-
+		
 		match piv {
 			Token::Delimiter(_) => Ok(Some(("".to_string(), false))),
 			Token::Quoted => self.read_quoted(),
@@ -139,7 +139,7 @@ mod test {
 	use super::*;
 	use crate::buf_token_stream::BufStream;
 	use std::io::Cursor;
-
+	
 	fn assert(
 		fixture: &mut DsvReader<BufStream<Cursor<&'static str>, b','>>,
 		scr: &str,
@@ -148,55 +148,68 @@ mod test {
 		let (v, b) = fixture.read().unwrap().unwrap();
 		assert_eq!((v, b), (scr.to_string(), eol));
 	}
-
+	
 	fn create(scr: &'static str) -> DsvReader<BufStream<Cursor<&'static str>, b','>> {
 		let cursor = Cursor::new(scr);
 		let stream = BufStream::try_new(cursor).unwrap();
 		DsvReader::new(stream)
 	}
-
+	
 	#[test]
 	fn zero_byte() {
 		let mut fixture = create("");
 		assert_eq!(fixture.read().unwrap(), None);
 	}
-
+	
+	#[test]
+	fn quoted_empty() {
+		let mut fixture = create(r##""","""##);
+		assert(&mut fixture, "", false);
+		assert(&mut fixture, "", true);
+		assert_eq!(fixture.read().unwrap(), None);
+		
+		let mut fixture = create(r##","""##);
+		assert(&mut fixture, "", false);
+		assert(&mut fixture, "", true);
+		assert_eq!(fixture.read().unwrap(), None);
+	}
+	
 	#[test]
 	fn simple_normal() {
 		let mut fixture = create("a,b,c\nd,e,f\rg,h,i\r\nj,k,l");
-
+		
 		assert(&mut fixture, "a", false);
 		assert(&mut fixture, "b", false);
 		assert(&mut fixture, "c", true);
-
+		
 		assert(&mut fixture, "d", false);
 		assert(&mut fixture, "e", false);
 		assert(&mut fixture, "f", true);
-
+		
 		assert(&mut fixture, "g", false);
 		assert(&mut fixture, "h", false);
 		assert(&mut fixture, "i", true);
-
+		
 		assert(&mut fixture, "j", false);
 		assert(&mut fixture, "k", false);
 		assert(&mut fixture, "l", true);
 		assert_eq!(fixture.read().unwrap(), None);
 	}
-
+	
 	#[test]
 	fn quoted() {
 		let mut fixture = create(
 			r##""a","b","c"
 "d""e""##,
 		);
-
+		
 		assert(&mut fixture, "a", false);
 		assert(&mut fixture, "b", false);
 		assert(&mut fixture, "c", true);
-
+		
 		assert(&mut fixture, r##"d"e"##, true);
 		assert_eq!(fixture.read().unwrap(), None);
-
+		
 		let mut fixture = create(
 			r##""a
 b
@@ -204,24 +217,24 @@ c
 d
 ""##,
 		);
-
+		
 		assert(&mut fixture, "a\nb\nc\nd\n", true);
-
+		
 		let mut fixture = create(r##""a,b,c""##);
 		assert(&mut fixture, "a,b,c", true);
 	}
-
+	
 	#[test]
 	fn unexpected() {
 		let mut fixture = create(r##"ho"ge"##);
 		assert!(matches!(fixture.read_quoted(), Err(Error::UnexpectedQuote)));
-
+		
 		let mut fixture = create(
 			r##""a
 		b
 		"##,
 		);
-
+		
 		assert!(matches!(fixture.read(), Err(Error::UnexpectedEOF)));
 	}
 }
