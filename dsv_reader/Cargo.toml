@@ -10,3 +10,4 @@ rand = "*"
 
 [dependencies]
 thiserror = "*"
+features = "*"

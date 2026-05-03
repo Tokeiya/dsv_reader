@@ -1,4 +1,5 @@
-use super::dsv_read::{DsvRead, Error};
+use super::dsv_read::DsvRead;
+use crate::read_error::Error;
 use crate::token::Token;
 use crate::token_stream::TokenStream;
 pub struct DsvReader<R: TokenStream> {

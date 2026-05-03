@@ -3,9 +3,13 @@ mod dsv_read;
 mod dsv_reader;
 mod token;
 mod token_stream;
+mod async_token_stream;
+mod async_read;
+mod read_error;
 
 pub use buf_token_stream::BufStream;
-pub use dsv_read::{DsvRead, Error as DsvReadError, Result as DsvReadResult};
+pub use dsv_read::{DsvRead, Result as DsvReadResult};
 pub use dsv_reader::DsvReader;
+pub use read_error::Error as DsvReadError;
 pub use token::Token;
 pub use token_stream::TokenStream;
