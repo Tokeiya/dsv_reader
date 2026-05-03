@@ -7,6 +7,7 @@ mod async_token_stream;
 mod async_read;
 mod read_error;
 
+pub use async_token_stream::AsyncTokenStream;
 pub use buf_token_stream::BufStream;
 pub use dsv_read::{DsvRead, Result as DsvReadResult};
 pub use dsv_reader::DsvReader;
