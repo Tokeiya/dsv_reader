@@ -3,7 +3,7 @@ use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug)]
 pub enum Error<E: std::error::Error> {
-	#[error("Unexpected end of file")]
+	#[error("Unexpected quote")]
 	UnexpectedQuote,
 	#[error("Unexpected end of file")]
 	UnexpectedEOF,
