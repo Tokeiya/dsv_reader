@@ -127,7 +127,7 @@ impl<R: Read, const D: u8> BufStream<R, D> {
 	}
 }
 
-impl<R: BufRead, const D: u8> TokenStream for BufStream<R, D> {
+impl<R: Read, const D: u8> TokenStream for BufStream<R, D> {
 	type Error = std::io::Error;
 
 	fn advance_token(&mut self) -> Result<Token, Self::Error> {

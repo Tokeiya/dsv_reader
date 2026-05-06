@@ -138,7 +138,7 @@ impl<R: TokenStream> DsvRead<R> for DsvReader<R> {
 #[cfg(test)]
 mod test {
 	use super::*;
-	use crate::buf_token_stream::BufStream;
+	use crate::BufStream;
 	use std::io::Cursor;
 	
 	fn assert(
