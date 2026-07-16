@@ -6,6 +6,7 @@ mod token_stream;
 mod async_token_stream;
 mod async_read;
 mod read_error;
+mod async_buf_token_stream;
 
 pub use async_token_stream::AsyncTokenStream;
 pub use buf_token_stream::BufStream;
